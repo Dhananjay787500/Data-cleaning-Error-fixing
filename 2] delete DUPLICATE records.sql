@@ -1,6 +1,24 @@
 # 2. How to delete DUPLICATE records from a table using a SQL Query?
 use analysis_db;
 
+create database analysis_db;
+use analysis_db;
+
+CREATE TABLE EMPLOYEE (
+	EMPLOYEE_ID int, NAME VARCHAR(20), SALARY int
+);
+ 
+INSERT INTO EMPLOYEE(EMPLOYEE_ID,NAME,SALARY) VALUES(100,'Jennifer',4400);
+INSERT INTO EMPLOYEE(EMPLOYEE_ID,NAME,SALARY) VALUES(100,'Jennifer',4400);
+INSERT INTO EMPLOYEE(EMPLOYEE_ID,NAME,SALARY) VALUES(101,'Michael',13000);
+INSERT INTO EMPLOYEE(EMPLOYEE_ID,NAME,SALARY) VALUES(101,'Michael',13000);
+INSERT INTO EMPLOYEE(EMPLOYEE_ID,NAME,SALARY) VALUES(101,'Michael',13000);
+INSERT INTO EMPLOYEE(EMPLOYEE_ID,NAME,SALARY) VALUES(102,'Pat',6000);
+INSERT INTO EMPLOYEE(EMPLOYEE_ID,NAME,SALARY) VALUES(102,'Pat',6000);
+INSERT INTO EMPLOYEE(EMPLOYEE_ID,NAME,SALARY) VALUES(103,'Den',11000);
+
+select * from employee;
+
 # add new column rowid
 alter table employee
 add column rowid varchar(100);
@@ -37,5 +55,37 @@ where employee_id in (100, 101, 102, 103);
 
 select * from employee;
 
+# METHOD-1: Using ROWID and ROW_NUMBERAnalytic Function
+-- An Oracle server assigns each row in each table with a unique ROWID to identify the row in the table. The ROWID is the address of the row which contains the data object number, the data block of the row, the row position and data file.
 
+# STEP-1: Using ROW_NUMBER Analytic function, assign row numbers to each unique set of records. Select ROWID of the rows along with the source columns
+	-- first assigning row_number to all records
+select rowid, employee_id, name, salary,
+row_number() over(
+	partition by employee_id, name, salary
+    order by salary) as Row_No
+from employee;
 
+	-- Next, assign row_number to each unique set of records
+    -- select rowid of record with row_number >= 1
+select rowid from (
+	select rowid, employee_id, name, salary,
+    row_number() over(
+		partition by employee_id, name, salary
+        order by employee_id) as Row_No
+	from employee) as E
+where Row_No > 1;
+
+# STEP-3: Delete the records from the source table using the ROWID values fetched in previous step
+
+delete from employee
+where rowid in (
+	select rowid from (
+	select rowid, employee_id, name, salary,
+    row_number() over(
+		partition by employee_id, name, salary
+        order by employee_id) as Row_No
+	from employee) as E
+where Row_No > 1);
+
+select * from employee;
