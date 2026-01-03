@@ -89,3 +89,6 @@ where rowid in (
 where Row_No > 1);
 
 select * from employee;
+
+
+
